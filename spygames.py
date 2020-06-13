@@ -10,7 +10,6 @@ params = {
     'v': 5.89
 }
 
-
 # 1 Получаем id
 # 1.1 Из переменной
 user_vk_id = 171691064
@@ -50,19 +49,13 @@ def get_filtered_user_groups_id(user_id, friends_list_ids):
     response = requests.get('https://api.vk.com/method/groups.get', params)
     user_groups_ids = response.json()['response']['items']
 
-    i = 0
     ind = 0
-    print('Filtering process:')
+    print('Estimated:')
     # 3. цикл по списку друзей:
-    while ind < len(friends_list_ids) - 1:
-
+    while ind < len(friends_list_ids):
         # 4. Получаем список групп каждого друга по очереди
         params['user_id'] = friends_list_ids[ind]
         response = requests.get('https://api.vk.com/method/groups.get', params)
-        print('*', end='')
-        i += 1
-        if i % 90 == 0:
-            print()
         if 'error' in response.json():
             if response.json()['error']['error_code'] == 6:
                 time.sleep(1.6)
@@ -70,6 +63,9 @@ def get_filtered_user_groups_id(user_id, friends_list_ids):
         else:
             friend_groups = response.json()['response']['items']
         ind += 1
+        print('\r\033[K', end='')
+        print(len(friends_list) - ind, end='')
+
         # 5. Сравнить c со списком групп юзера и удалить дубли
         for user_gr_id in user_groups_ids:
             if user_gr_id in friend_groups:
@@ -106,7 +102,7 @@ def user_groups_info_output(user_groups_ids):
 
     # 7. Идем циклом по списку id групп
     ind = 0
-    while ind < len(user_groups_ids) - 1:
+    while ind < len(user_groups_ids):
         gr_id = user_groups_ids[ind]
         groups_list.append(get_group_info_by_id(gr_id, ind))
         ind += 1
@@ -125,5 +121,6 @@ friends_list = get_friends_id_list(user_vk_id)
 
 # 3 Оставляем уникальные
 filtered_user_groups_ids = get_filtered_user_groups_id(user_vk_id, friends_list)
+
 # 4 Гет инфо и запись в файл
 user_groups_info_output(filtered_user_groups_ids)
