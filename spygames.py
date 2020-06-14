@@ -4,7 +4,7 @@ import requests
 import sys
 
 # В константу TOKEN введите токен
-TOKEN = ''
+TOKEN = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008'
 params = {
     'access_token': TOKEN,
     'v': 5.89
@@ -58,7 +58,7 @@ def get_filtered_user_groups_id(user_id, friends_list_ids):
         response = requests.get('https://api.vk.com/method/groups.get', params)
         if 'error' in response.json():
             if response.json()['error']['error_code'] == 6:
-                time.sleep(1.6)
+                time.sleep(0.8)
                 ind -= 1
         else:
             friend_groups = response.json()['response']['items']
@@ -70,20 +70,17 @@ def get_filtered_user_groups_id(user_id, friends_list_ids):
         for user_gr_id in user_groups_ids:
             if user_gr_id in friend_groups:
                 user_groups_ids.remove(user_gr_id)
+    print()
     return user_groups_ids
 
 
 # Получить инфо о группе по айди
-def get_group_info_by_id(group_id, ind):
+def get_group_info_by_id(group_id):
     group_dict = {}
     params['group_id'] = group_id
     loc_response = requests.get('https://api.vk.com/method/groups.getById', params)
 
-    if 'error' in loc_response.json():
-        if loc_response.json()['error']['error_code'] == 6:
-            time.sleep(1.6)
-            ind -= 1
-    else:
+    if 'error' not in loc_response.json():
         # Получаем значения name, gid и members_count из response:
         gid = group_id
         name = loc_response.json()['response'][0]['name']
@@ -91,10 +88,10 @@ def get_group_info_by_id(group_id, ind):
 
         # В словарь  group записывам ключи name, gid, members_count
         group_dict = {'name': name, 'gid': gid, 'members_count': members_count}
-    return group_dict, ind
+    return group_dict
 
 
-# Получение инфо о группе и запись в файл
+# Запись в файл полученной инфо о группе
 # 6. Получаем дополнительное поле - "Число участников группы", с помощью параметра запроса
 def user_groups_info_output(user_groups_ids):
     params['fields'] = 'members_count'
@@ -104,8 +101,12 @@ def user_groups_info_output(user_groups_ids):
     ind = 0
     while ind < len(user_groups_ids):
         gr_id = user_groups_ids[ind]
-        groups_list.append(get_group_info_by_id(gr_id, ind))
-        ind += 1
+        groups_item = get_group_info_by_id(gr_id)
+        if groups_item != {}:
+            groups_list.append(groups_item)
+            ind += 1
+        else:
+            time.sleep(0.8)
 
     # 8. Запись списка групп в файл
     with open('groups.json', 'w', encoding="utf-8") as fo:
